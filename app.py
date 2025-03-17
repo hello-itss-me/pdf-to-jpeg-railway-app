@@ -17,17 +17,19 @@ def convert_pdf_to_jpeg():
 
         base64_string = data['data']
         pdf_bytes = base64.b64decode(base64_string)
-        images = convert_from_bytes(pdf_bytes) # Теперь images - это список PIL Image objects
+        images = convert_from_bytes(pdf_bytes)
 
-        jpeg_base64_strings = [] # Список для хранения base64 строк JPEG для каждой страницы
-        for image in images: # Итерируем по списку изображений (страниц)
+        jpeg_images_dict = {} # Словарь для хранения base64 строк, где ключ - "листN"
+        for i, image in enumerate(images): # Используем enumerate для получения индекса страницы
             img_byte_arr = io.BytesIO()
             image.save(img_byte_arr, format='JPEG')
             img_byte_arr = img_byte_arr.getvalue()
             jpeg_base64_string = base64.b64encode(img_byte_arr).decode('utf-8')
-            jpeg_base64_strings.append(jpeg_base64_string) # Добавляем base64 строку в список
+            page_number = i + 1 # Номера страниц начинаются с 1
+            key_name = f"лист{page_number}" # Формируем ключ "лист1", "лист2", ...
+            jpeg_images_dict[key_name] = jpeg_base64_string # Добавляем base64 строку в словарь
 
-        return jsonify({"success": True, "jpeg_images": jpeg_base64_strings}), 200 # Возвращаем список base64 строк в JSON
+        return jsonify({"success": True, "pages": jpeg_images_dict}), 200 # Возвращаем словарь в JSON под ключом "pages"
     except Exception as e:
         print(f"Произошла ошибка: {e}")
         return jsonify({"error": f"Произошла ошибка: {e}"}), 500
